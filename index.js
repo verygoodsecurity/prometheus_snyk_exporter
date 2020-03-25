@@ -201,20 +201,22 @@ function getVulnerabilityCounts (issues) {
   return results;
 }
 
-function setSeverityGauges (projectName, projectId, severities) {
+function setSeverityGauges (projectName, fileName, projectId, severities) {
   _.each(severities, (count, severity) => {
     vulnerabilitiesBySeverity.set({
       project: projectName,
+      path: fileName,
       severity: severity
     }, count);
   });
 }
 
-function setTypeGauges (projectName, projectId, types) {
+function setTypeGauges (projectName, fileName, projectId, types) {
   _.each(types, (count, type) => {
     // console.log(`Type: ${typeName}, Count: ${types[typeName]}`);
     vulnerabilitiesByType.set({
       project: projectName,
+      path: fileName,
       type: type
     }, count);
   });
