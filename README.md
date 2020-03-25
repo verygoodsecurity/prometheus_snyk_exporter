@@ -192,3 +192,11 @@ Run unit tests:
 ```
 npm run test
 ```
+
+#### Deployment
+
+```sh
+VERSION=$(git rev-parse --short HEAD) docker-compose build
+VERSION=$(git rev-parse --short HEAD) docker-compose run prometheus_snyk_exporter npm test
+VERSION=$(git rev-parse --short HEAD) docker-compose push
+```
