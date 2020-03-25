@@ -78,19 +78,9 @@ function init (options) {
 }
 
 async function backgroundWorker () {
-  data = [];
   console.log('Background refresh starting...');
   const response = await getProjects(ORG_NAME);
-  console.log(response);
-  await processProjects(response.data, data);
-  console.log(`Processed ${data.length} projects`);
-  // resetStats();
-
-  // _.each(data, (name, id, severities, types) => {
-  //   setSeverityGauges(name, id, severities);
-  //   setTypeGauges(name, id, types);
-  // });
-
+  await processProjects(response.data);
   console.log('Background refresh completed.');
 }
 
@@ -127,7 +117,7 @@ async function getProjects (orgName) {
   return httpClient.get(`/org/${orgName}/projects`);
 }
 
-async function processProjects (projectData, data) {
+async function processProjects (projectData) {
   let orgId;
   if (projectData.org && projectData.org.id) {
     orgId = projectData.org.id;
@@ -154,7 +144,6 @@ async function processProjects (projectData, data) {
 
     let countsForProject = getVulnerabilityCounts(issueData.data.issues);
 
-    data.push({name: project.name, id: project.Id, severities: countsForProject.severities, types: countsForProject.types});
     setSeverityGauges(project.name, project.Id, countsForProject.severities);
     setTypeGauges(project.name, project.Id, countsForProject.types);
   }
