@@ -36,13 +36,13 @@ const up = new prometheusClient.Gauge({name: 'up', help: 'UP Status'});
 const vulnerabilitiesBySeverity = new prometheusClient.Gauge({
   name: 'snyk_num_vulnerabilities_by_severity',
   help: 'Number of Snyk vulnerabilities by severity',
-  labelNames: ['project', 'severity']
+  labelNames: ['project', 'path', 'severity']
 });
 
 const vulnerabilitiesByType = new prometheusClient.Gauge({
   name: 'snyk_num_vulnerabilities_by_type',
   help: 'Number of Snyk vulnerabilities by type',
-  labelNames: ['project', 'type']
+  labelNames: ['project', 'path', 'type']
 });
 
 if (require.main === module) {
@@ -143,8 +143,14 @@ async function processProjects (projectData) {
 
     let countsForProject = getVulnerabilityCounts(issueData.data.issues);
 
-    setSeverityGauges(project.name, project.Id, countsForProject.severities);
-    setTypeGauges(project.name, project.Id, countsForProject.types);
+    let fullName = project.name.split(':');
+    let projectName = (fullName.length) ? fullName[0] : 'unknown';
+    let fileName = (fullName.length > 1) ? fullName[1] : 'unknown';
+
+    console.log(projectName, fileName);
+
+    setSeverityGauges(projectName, fileName, project.Id, countsForProject.severities);
+    setTypeGauges(projectName, fileName, project.Id, countsForProject.types);
   }
 }
 
