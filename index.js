@@ -64,7 +64,7 @@ function init (options) {
   if (!options.ORG_NAME) {
     throw new Error('Environment variable SNYK_ORG_NAME must be set');
   }
-  POLL_TIME_SECONDS = options.POLL_TIME_SECONDS || 60;
+  POLL_TIME_SECONDS = options.POLL_TIME_SECONDS || 600;
   SNYK_API_TOKEN = options.SNYK_API_TOKEN;
   ORG_NAME = options.ORG_NAME;
   BASE_URL = options.BASE_URL || 'https://snyk.io/api/v1';
