@@ -147,8 +147,6 @@ async function processProjects (projectData) {
     let projectName = (fullName.length) ? fullName[0] : 'unknown';
     let fileName = (fullName.length > 1) ? fullName[1] : 'unknown';
 
-    console.log(projectName, fileName);
-
     setSeverityGauges(projectName, fileName, project.Id, countsForProject.severities);
     setTypeGauges(projectName, fileName, project.Id, countsForProject.types);
   }
