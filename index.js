@@ -28,6 +28,7 @@ const POST_DATA = {
 var BASE_URL;
 var ORG_NAME;
 var SNYK_API_TOKEN;
+var POLL_TIME_SECONDS;
 var httpClient;
 
 const up = new prometheusClient.Gauge({name: 'up', help: 'UP Status'});
@@ -50,6 +51,7 @@ if (require.main === module) {
   options.SNYK_API_TOKEN = process.env.SNYK_API_TOKEN;
   options.ORG_NAME = process.env.SNYK_ORG_NAME;
   options.BASE_URL = process.env.SNYK_API_BASE_URL;
+  options.POLL_TIME_SECONDS = process.env.POLL_TIME_SECONDS;
 
   init(options);
   startServer();
@@ -62,6 +64,7 @@ function init (options) {
   if (!options.ORG_NAME) {
     throw new Error('Environment variable SNYK_ORG_NAME must be set');
   }
+  POLL_TIME_SECONDS = options.POLL_TIME_SECONDS || 60;
   SNYK_API_TOKEN = options.SNYK_API_TOKEN;
   ORG_NAME = options.ORG_NAME;
   BASE_URL = options.BASE_URL || 'https://snyk.io/api/v1';
@@ -71,17 +74,32 @@ function init (options) {
       'Authorization': SNYK_API_TOKEN
     }
   });
+
+}
+
+async function backgroundWorker () {
+  data = [];
+  console.log('Background refresh starting...');
+  const response = await getProjects(ORG_NAME);
+  console.log(response);
+  await processProjects(response.data, data);
+  console.log(`Processed ${data.length} projects`);
+  // resetStats();
+
+  // _.each(data, (name, id, severities, types) => {
+  //   setSeverityGauges(name, id, severities);
+  //   setTypeGauges(name, id, types);
+  // });
+
+  console.log('Background refresh completed.');
 }
 
 function startServer () {
+  setTimeout(backgroundWorker, POLL_TIME_SECONDS * 1000);
   metricsServer.get('/metrics', async (req, res) => {
     res.contentType(prometheusClient.register.contentType);
 
     try {
-      resetStats();
-      const response = await getProjects(ORG_NAME);
-      await processProjects(response.data);
-
       res.send(prometheusClient.register.metrics());
     } catch (error) {
       // error connecting
@@ -109,7 +127,7 @@ async function getProjects (orgName) {
   return httpClient.get(`/org/${orgName}/projects`);
 }
 
-async function processProjects (projectData) {
+async function processProjects (projectData, data) {
   let orgId;
   if (projectData.org && projectData.org.id) {
     orgId = projectData.org.id;
@@ -117,11 +135,15 @@ async function processProjects (projectData) {
     throw new Error('Unable to find org id in response data');
   }
 
+  if (DEBUG) {
+    console.log(`Retrieved ${projectData.projects.length} projects`);
+  }
+
   for (let i = 0; i < projectData.projects.length; i++) {
     const project = projectData.projects[i];
 
     if (DEBUG) {
-      console.log(`Project Name: ${project.projectName} Project ID: ${project.projectId}`);
+      console.log(`Project Name: ${project.name} Project ID: ${project.id}`);
     }
 
     let issueData = await getIssues(orgId, project);
@@ -131,6 +153,8 @@ async function processProjects (projectData) {
     }
 
     let countsForProject = getVulnerabilityCounts(issueData.data.issues);
+
+    data.push({name: project.name, id: project.Id, severities: countsForProject.severities, types: countsForProject.types});
     setSeverityGauges(project.name, project.Id, countsForProject.severities);
     setTypeGauges(project.name, project.Id, countsForProject.types);
   }
