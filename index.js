@@ -79,13 +79,18 @@ function init (options) {
 
 async function backgroundWorker () {
   console.log('Background refresh starting...');
-  const response = await getProjects(ORG_NAME);
+
+  var response = await getProjects(ORG_NAME);
   await processProjects(response.data);
+
   console.log('Background refresh completed.');
+  console.log(`Sleeping ${POLL_TIME_SECONDS} seconds`)
+
+  setTimeout(backgroundWorker, POLL_TIME_SECONDS * 1000);
 }
 
 function startServer () {
-  setTimeout(backgroundWorker, POLL_TIME_SECONDS * 1000);
+  setTimeout(backgroundWorker, 1000);
   metricsServer.get('/metrics', async (req, res) => {
     res.contentType(prometheusClient.register.contentType);
 
@@ -105,12 +110,6 @@ function startServer () {
 
 function shutdown () {
   metricsServer.close();
-}
-
-function resetStats () {
-  up.set(1);
-  vulnerabilitiesBySeverity.reset();
-  vulnerabilitiesByType.reset();
 }
 
 async function getProjects (orgName) {
