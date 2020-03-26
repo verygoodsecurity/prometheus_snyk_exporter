@@ -80,10 +80,16 @@ function init (options) {
 async function backgroundWorker () {
   console.log('Background refresh starting...');
 
-  var response = await getProjects(ORG_NAME);
-  await processProjects(response.data);
+  try {
+    var response = await getProjects(ORG_NAME);
+    await processProjects(response.data);
 
-  console.log('Background refresh completed.');
+    console.log('Background refresh completed.');
+    up.set(1);
+  } catch (err) {
+    up.set(0);
+    console.warn(error.message || error);
+  }
   console.log(`Sleeping ${POLL_TIME_SECONDS} seconds`)
 
   setTimeout(backgroundWorker, POLL_TIME_SECONDS * 1000);
